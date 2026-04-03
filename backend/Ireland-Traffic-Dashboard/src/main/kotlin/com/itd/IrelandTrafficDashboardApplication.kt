@@ -10,4 +10,10 @@ class IrelandTrafficDashboardApplication
 
 fun main(args: Array<String>) {
     runApplication<IrelandTrafficDashboardApplication>(*args)
+
+    /*
+    PostgreSQL：cities / city config structured data
+    Redis：third-party API cache
+    MongoDB：dashboard snapshot / history
+    */
 }

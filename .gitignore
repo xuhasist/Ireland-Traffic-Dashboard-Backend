@@ -46,3 +46,7 @@ replay_pid*
 .env.*
 application-local.properties
 application-secret.properties
+
+# Spring config
+application.properties
+application.yml

@@ -65,17 +65,18 @@ class TomTomProxyService(
 
         val fields = "{incidents{type,geometry{type,coordinates},properties{id,iconCategory,magnitudeOfDelay,events{description,code,iconCategory},startTime,endTime,from,to,length,delay,roadNumbers,timeValidity,probabilityOfOccurrence,numberOfReports,lastReportTime,tmc{countryCode,tableNumber,tableVersion,direction,points{location,offset}}}}}";
 
-        val url = UriComponentsBuilder
-            .fromHttpUrl("$baseUrl/5/incidentDetails")
+        val uri = UriComponentsBuilder
+            .fromUriString("$baseUrl/5/incidentDetails")
             .queryParam("key", apiKey)
             .queryParam("bbox", "$minLon,$minLat,$maxLon,$maxLat")
             .queryParam("language", "en-GB")
             .queryParam("fields", fields)
-            .build(true)
-            .toUriString()
+            .build()
+            .encode()
+            .toUri()
 
         val root = restClient.get()
-            .uri(url)
+            .uri(uri)
             .retrieve()
             .body(JsonNode::class.java)
             ?: return IncidentResponseDto(results = emptyList())

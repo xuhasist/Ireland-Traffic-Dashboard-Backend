@@ -35,6 +35,23 @@ class CityConfigService(
         return CityConfigListResponseDto(data = items)
     }
 
+    fun getEnabledCityConfig(cityName: String): CityConfigItemDto? {
+        val entity = cityConfigRepository.findByCityNameIgnoreCaseAndEnabledTrue(cityName)
+            ?: return null
+
+        return CityConfigItemDto(
+            cityName = entity.cityName,
+            center = listOf(entity.centerLat, entity.centerLng),
+            bbox = BBoxDto(
+                minLon = entity.bboxMinLon,
+                minLat = entity.bboxMinLat,
+                maxLon = entity.bboxMaxLon,
+                maxLat = entity.bboxMaxLat,
+            ),
+            roads = parseRoads(entity.roadsJson),
+        )
+    }
+
     private fun parseRoads(json: String): List<RoadPointDto> {
         return try {
             objectMapper.readValue(json, roadListType)
@@ -43,4 +60,3 @@ class CityConfigService(
         }
     }
 }
-

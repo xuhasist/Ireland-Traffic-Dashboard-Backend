@@ -5,5 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository
 
 interface CityConfigRepository : JpaRepository<CityConfigEntity, Long> {
     fun findAllByEnabledTrueOrderByCityNameAsc(): List<CityConfigEntity>
+    fun findByCityNameIgnoreCaseAndEnabledTrue(cityName: String): CityConfigEntity?
 }
 

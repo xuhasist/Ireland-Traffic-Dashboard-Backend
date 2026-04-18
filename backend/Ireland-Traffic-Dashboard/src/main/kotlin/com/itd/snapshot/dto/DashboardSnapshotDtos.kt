@@ -37,12 +37,6 @@ data class SnapshotCongestionDto(
 data class DashboardSnapshotSaveRequestDto(
     val city: String,
     val dataMode: String,
-    val trafficCount: Int,
-    val incidentCount: Int,
-    val generatedAt: String,
-    val weather: SnapshotWeatherDto?,
-    val metrics: SnapshotMetricsDto?,
-    val congestion: SnapshotCongestionDto,
 )
 
 data class DashboardSnapshotItemDto(
@@ -67,4 +61,3 @@ data class DashboardSnapshotListResponseDto(
     val meta: ApiMeta = ApiMeta(source = "mongodb"),
     val data: List<DashboardSnapshotItemDto>,
 )
-

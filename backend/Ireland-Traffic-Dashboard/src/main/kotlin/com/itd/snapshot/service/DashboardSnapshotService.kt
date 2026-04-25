@@ -19,6 +19,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import kotlin.String
 
 @Service
 class DashboardSnapshotService(
@@ -131,7 +132,18 @@ class DashboardSnapshotService(
         )
 
         return DashboardSnapshotListResponseDto(
+            // items is a List
+            // map gets each item from the list
+            // it refers to each item
             data = items.map { it.toItemDto() }
+        )
+    }
+
+    fun getTopTenSnapshots(): DashboardSnapshotHistoryListResponseDto {
+        val items = dashboardSnapshotRepository.findTop10ByOrderByCapturedAtDesc()
+
+        return DashboardSnapshotHistoryListResponseDto(
+            data = items.map { it.toHistoryItemDto() }
         )
     }
 
@@ -198,6 +210,17 @@ class DashboardSnapshotService(
             weather = this.weather,
             metrics = this.metrics,
             congestion = this.congestion,
+        )
+    }
+
+    private fun DashboardSnapshotDocument.toHistoryItemDto(): DashboardSnapshotHistoryItemDto {
+        return DashboardSnapshotHistoryItemDto(
+            id = this.id ?: "",
+            city = this.city,
+            incidentCount = this.incidentCount,
+            capturedAt = this.capturedAt.toString(),
+            avgSpeed = this.metrics?.avgSpeed,
+            temperature = this.weather?.temperature
         )
     }
 

@@ -1,5 +1,6 @@
 package com.itd.snapshot.controller
 
+import com.itd.snapshot.dto.DashboardSnapshotHistoryListResponseDto
 import com.itd.snapshot.dto.DashboardSnapshotListResponseDto
 import com.itd.snapshot.dto.DashboardSnapshotResponseDto
 import com.itd.snapshot.dto.DashboardSnapshotSaveRequestDto
@@ -36,6 +37,12 @@ class DashboardSnapshotController(
         @RequestParam(defaultValue = "20") limit: Int,
     ): DashboardSnapshotListResponseDto {
         return dashboardSnapshotService.getRecentSnapshots(city, limit)
+    }
+
+    @GetMapping("/top10")
+    fun getTopTenSnapshots(
+    ): DashboardSnapshotHistoryListResponseDto {
+        return dashboardSnapshotService.getTopTenSnapshots()
     }
 }
 

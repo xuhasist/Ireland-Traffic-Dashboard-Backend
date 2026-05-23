@@ -1,6 +1,7 @@
 package com.itd.traffic.service
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.itd.config.ExternalApiProperties
 import com.itd.traffic.dto.FlowLinkDto
 import com.itd.traffic.dto.FlowPointDto
 import com.itd.traffic.dto.IncidentDetailsDto
@@ -15,11 +16,11 @@ import com.itd.traffic.dto.TrafficLocationDto
 import com.itd.traffic.dto.TrafficSegmentDto
 import com.itd.traffic.dto.TrafficShapeDto
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpClientErrorException
 import org.springframework.web.client.RestClient
+import org.springframework.web.client.RestClientException
 import org.springframework.web.util.UriComponentsBuilder
 import kotlin.math.max
 import kotlin.math.min
@@ -28,13 +29,19 @@ import kotlin.math.roundToInt
 @Service
 class TomTomProxyService(
     private val restClientBuilder: RestClient.Builder,
-    @Value("\${external.tomtom.api-key}") private val apiKey: String,
-    @Value("\${external.tomtom.base-url}") private val baseUrl: String,
+    externalApiProperties: ExternalApiProperties,
 ) {
     private val restClient: RestClient = restClientBuilder.build()
+    private val apiKey = externalApiProperties.tomtom.apiKey
+    private val baseUrl = externalApiProperties.tomtom.baseUrl.trimEnd('/')
 
     companion object {
         private val log = LoggerFactory.getLogger(TomTomProxyService::class.java)
+        private const val INCIDENT_FIELDS =
+            "{incidents{type,geometry{type,coordinates},properties{id,iconCategory,magnitudeOfDelay," +
+                "events{description,code,iconCategory},startTime,endTime,from,to,length,delay,roadNumbers," +
+                "timeValidity,probabilityOfOccurrence,numberOfReports,lastReportTime,tmc{countryCode," +
+                "tableNumber,tableVersion,direction,points{location,offset}}}}}"
     }
 
     @Cacheable(
@@ -63,23 +70,32 @@ class TomTomProxyService(
     ): IncidentResponseDto {
         if (apiKey.isBlank()) return IncidentResponseDto(results = emptyList())
 
-        val fields = "{incidents{type,geometry{type,coordinates},properties{id,iconCategory,magnitudeOfDelay,events{description,code,iconCategory},startTime,endTime,from,to,length,delay,roadNumbers,timeValidity,probabilityOfOccurrence,numberOfReports,lastReportTime,tmc{countryCode,tableNumber,tableVersion,direction,points{location,offset}}}}}";
-
         val uri = UriComponentsBuilder
             .fromUriString("$baseUrl/5/incidentDetails")
             .queryParam("key", apiKey)
             .queryParam("bbox", "$minLon,$minLat,$maxLon,$maxLat")
             .queryParam("language", "en-GB")
-            .queryParam("fields", fields)
+            .queryParam("fields", INCIDENT_FIELDS)
             .build()
             .encode()
             .toUri()
 
-        val root = restClient.get()
-            .uri(uri)
-            .retrieve()
-            .body(JsonNode::class.java)
-            ?: return IncidentResponseDto(results = emptyList())
+        val root = try {
+            restClient.get()
+                .uri(uri)
+                .retrieve()
+                .body(JsonNode::class.java)
+        } catch (ex: RestClientException) {
+            log.warn(
+                "Failed to fetch TomTom incidents for bbox={},{},{},{}",
+                minLon,
+                minLat,
+                maxLon,
+                maxLat,
+                ex
+            )
+            return IncidentResponseDto(results = emptyList())
+        } ?: return IncidentResponseDto(results = emptyList())
 
         val incidents = root.path("incidents")
         if (!incidents.isArray) {
@@ -131,7 +147,10 @@ class TomTomProxyService(
                 ),
                 impact = IncidentImpactDto(
                     delayInSeconds = properties.path("delay").asInt(0),
-                    affectedRoads = properties.path("roadNumbers").map { it.asText() },
+                    affectedRoads = properties.path("roadNumbers")
+                        .takeIf { it.isArray }  // check if it's an array
+                        ?.map { it.asText() }   // transform to list of strings
+                        ?: emptyList(), // if not an array, return empty list
                 ),
                 icon = getIncidentIcon(iconCategory),
             )

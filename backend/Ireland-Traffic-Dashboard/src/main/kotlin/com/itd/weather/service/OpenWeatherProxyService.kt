@@ -1,20 +1,27 @@
 package com.itd.weather.service
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.itd.config.ExternalApiProperties
 import com.itd.weather.dto.WeatherResponseDto
-import org.springframework.beans.factory.annotation.Value
+import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
+import org.springframework.web.client.RestClientException
 import org.springframework.web.client.RestClient
 import org.springframework.web.util.UriComponentsBuilder
 
 @Service
 class OpenWeatherProxyService(
     private val restClientBuilder: RestClient.Builder,
-    @Value("\${external.openweather.api-key}") private val apiKey: String,
-    @Value("\${external.openweather.base-url}") private val baseUrl: String,
+    externalApiProperties: ExternalApiProperties,
 ) {
     private val restClient: RestClient = restClientBuilder.build()
+    private val apiKey = externalApiProperties.openweather.apiKey
+    private val baseUrl = externalApiProperties.openweather.baseUrl
+
+    companion object {
+        private val log = LoggerFactory.getLogger(OpenWeatherProxyService::class.java)
+    }
 
     @Cacheable(
         cacheNames = ["weather"],
@@ -33,11 +40,15 @@ class OpenWeatherProxyService(
             .build(true)
             .toUriString()
 
-        val root = restClient.get()
-            .uri(url)
-            .retrieve()
-            .body(JsonNode::class.java)
-            ?: return null
+        val root = try {
+            restClient.get()
+                .uri(url)
+                .retrieve()
+                .body(JsonNode::class.java)
+        } catch (ex: RestClientException) {
+            log.warn("Failed to fetch OpenWeather data for lat={}, lon={}", lat, lon, ex)
+            return null
+        } ?: return null
 
         return WeatherResponseDto(
             temperature = root.path("main").path("temp").asDouble(),
@@ -50,4 +61,3 @@ class OpenWeatherProxyService(
         )
     }
 }
-

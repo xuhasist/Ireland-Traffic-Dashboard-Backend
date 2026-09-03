@@ -1,8 +1,19 @@
 # Ireland Traffic Dashboard 
-A full-stack traffic monitoring dashboard for Irish cities, built with React 18.3.1, TypeScript 5.6.3, Spring Boot 3.5.0 with Kotlin 2.1.21, PostgreSQL 16, MongoDB 7, Redis 7, and Docker Compose.  
-It displays weather, traffic flow, incidents, summary metrics, charts, map visualization, and dashboard snapshots.
+Backend service for a full-stack traffic monitoring dashboard for Irish cities.
 
-## 📁 Backend Project Structure
+Built with Spring Boot 3.5.0, Kotlin 2.1.21, PostgreSQL 16, MongoDB 7, Redis 7, and Docker Compose, the service aggregates traffic and weather data into a normalized dashboard API consumed by a React frontend.
+
+The dashboard provides traffic flow, incidents, weather conditions, summary metrics, charts, map visualizations, and dashboard snapshots.
+
+## ✨ Backend Highlights
+- Aggregates traffic, weather, incident, metric, and chart data through a unified dashboard API
+- Integrates with TomTom Traffic and OpenWeather APIs
+- Uses Redis to cache external API responses and reduce redundant requests
+- Stores structured city configuration in PostgreSQL
+- Stores nested dashboard snapshots in MongoDB
+- Supports both mock and live data modes
+
+## 📁 Project Structure
 
 ```
 Ireland-Traffic-Dashboard-Backend
